@@ -11,8 +11,11 @@ TS_CLIENT = Client({
     'protocol': config.TYPESENSE_PROTOCOL,
   }],
   'api_key': config.TYPESENSE_API_KEY,
-  'connection_timeout_seconds': 30,
+  'connection_timeout_seconds': 120,
 })
+
+HYBRID_ALPHA: float = 0.5
+MAX_VECTOR_DISTANCE: float = 0.70
 
 CONSULTANT_SCHEMA: Dict[str, Any] = {
     "name": config.COLLECTION_NAME,
@@ -20,6 +23,8 @@ CONSULTANT_SCHEMA: Dict[str, Any] = {
         {"name": "search_text", "type": "string"},
         {"name": "name", "type": "string"},
         {"name": "status", "type": "string", "facet": True},
+        {"name": "city", "type": "string", "facet": True, "optional": True},
+        {"name": "category", "type": "string", "facet": True, "optional": True},
         {
             "name": "embedding",
             "type": "float[]",
@@ -32,6 +37,11 @@ CONSULTANT_SCHEMA: Dict[str, Any] = {
         },
     ],
 }
+
+SCHEMA_PATCH_FIELDS: List[Dict] = [
+    {"name": "city", "type": "string", "facet": True, "optional": True},
+    {"name": "category", "type": "string", "facet": True, "optional": True},
+]
 
 SUMMARISATION_PROMPT: str = (
     """
@@ -77,7 +87,9 @@ INITIAL_PROMPT: str = (
 
     # Context
 
-    This assistant operates as the conversational layer over a vector database of IT professional CVs. The database retrieves and passes candidate data to you based on the user's query. Your role is to interpret that data and communicate it clearly — not to fabricate candidates or invent details not present in the retrieved records.
+    This assistant operates as the conversational layer over a vector database of IT professional CVs. The database retrieves and passes candidate data to you based on the user's query. Your role is to interpret that data and communicate it clearly.
+
+    **CRITICAL — NO HALLUCINATION:** You must only refer to candidates that appear in the retrieved database results passed to you. Never invent, fabricate, or recall candidate names, skills, employers, or any other details from your own training data. Every candidate name you mention must come directly from the retrieved records for the current query. If a name is not in the retrieved results, do not mention it.
 
     # Instructions
 
@@ -90,12 +102,13 @@ INITIAL_PROMPT: str = (
     - Present the retrieved candidates as a ranked or summarised list
     - For each candidate, highlight their name, headline role, and the key skills/experiences most relevant to the user's stated requirements
     - If multiple candidates are returned, briefly distinguish them so the user can make an informed choice about who to explore further
-    - Never invent candidates or add skills not present in the retrieved data
+    - **ONLY mention candidates whose names and details appear in the retrieved database results. Never add candidates from memory or general knowledge. Never invent candidate names, companies, skills, or achievements.**
 
     **Profile Deep-Dive Mode (activate when the user asks about a specific person):**
     - Detect when the user shifts focus to a specific candidate — this may be explicit ("tell me more about John") or implicit (follow-up questions that reference the previous result)
     - Switch fully into profile mode: draw on all available data for that candidate to answer the user's question thoroughly
     - Answer naturally as if you have their full profile in front of you — summarise experience, skills, education, notable projects, or anything else the user asks about
+    - **Only state facts present in the retrieved profile data. Do not fill gaps with assumptions or invented details.**
     - Maintain this mode until the user explicitly requests a new search or shifts to a different candidate
 
     **Tone and Communication:**
@@ -108,6 +121,8 @@ INITIAL_PROMPT: str = (
     - If the user asks something about a candidate that isn't covered in their CV data, acknowledge the gap rather than speculating
     - Do not answer questions unrelated to candidate discovery or profile review
     - If no data is retrieved at all, inform the user and suggest refining their search criteria
+
+    **REMINDER — STRICT GROUNDING RULE:** Every candidate you name, every skill you attribute, and every employer you cite must exist in the retrieved records for this conversation turn. Hallucinating candidate names or details — even plausible-sounding ones — is a critical failure. When in doubt, only say what the data explicitly supports.
     """
 )
 

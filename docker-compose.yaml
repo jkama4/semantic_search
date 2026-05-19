@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      - OLLAMA_CONN_ENDPOINT=http://ollama:11434
     ports:
       - "8000:8000"
     volumes:
@@ -16,10 +18,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
 
   dashboard:
     build:
@@ -27,6 +29,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/src
     ports:
       - "8501:8501"
     volumes:
@@ -61,7 +65,9 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
-    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull llama3.2 && wait"]
+    environment:
+      LLM_MODEL: ${LLM_MODEL:-llama3.2}
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${LLM_MODEL:-llama3.2} && wait"]
 
   db:
     image: postgres:16

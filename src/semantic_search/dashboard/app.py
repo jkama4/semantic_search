@@ -1,43 +1,22 @@
 import os
 
 import streamlit as st
-import requests
+
+from semantic_search.api import config
+from semantic_search.dashboard.components import candidate_list, chat_history, chat_input, sidebar
 
 st.title("Candidate Discovery")
 
-with st.sidebar:
-    inject_info = st.toggle("Search candidate database", value=True)
-    if st.button("Re-index candidates"):
-        with st.spinner("Indexing candidates from database..."):
-            r = requests.post(url=os.getenv("SEARCH_ENDPOINT").replace("/search", "/index"))
-            if r.status_code == 200:
-                st.success(f"Indexed {r.json()['indexed']} candidates.")
-            else:
-                st.error(f"Indexing failed: {r.status_code}")
+for key in ("status_filter", "city_filter", "category_filter"):
+    if key not in st.session_state:
+        st.session_state[key] = ""
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+if "search_results" not in st.session_state:
+    st.session_state.search_results = {}
 
-if prompt := st.chat_input("Describe the candidate you're looking for..."):
-    st.chat_message("user").markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    response = requests.post(
-        url=os.getenv("LLM_ENDPOINT"),
-        json={
-            "history": st.session_state.messages,
-            "inject_info": inject_info,
-        },
-    )
-
-    if response.status_code != 200:
-        st.error(f"API error: {response.status_code} - {response.text}")
-    else:
-        assistant_message = response.json()["response"]
-        with st.chat_message("assistant"):
-            st.markdown(assistant_message)
-        st.session_state.messages.append({"role": "assistant", "content": assistant_message})
+inject_info, rerank = sidebar(config.SEARCH_ENDPOINT)
+chat_history()
+chat_input(config.LLM_ENDPOINT, inject_info, rerank)

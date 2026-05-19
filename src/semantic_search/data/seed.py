@@ -1,17 +1,16 @@
 import os
-from datetime import date
+import random
+from datetime import date, timedelta
+from typing import Tuple
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from semantic_search.db.models import (
+from ..db.models import (
     Candidate, CandidateEducation, CandidateGDPR, CandidateWorkExperience,
     ClientContact, ClientCorporation,
 )
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
+from ..db.session import DATABASE_URL, engine, SessionLocal
 
 
 def c(eid, fn, ln, gen, dob, city, zipcode, state, mobile, email, source, avail, status, category, skills):
@@ -49,7 +48,6 @@ def gdpr(cid, purpose, basis, sent, received, source):
     )
 
 CANDIDATES = [
-    # --- Core profiles (CV-00101 – CV-00115) ---
     c("CV-00101","Pieter","van den Berg","M",date(1986,3,14),"Amsterdam","1012 AB","Noord-Holland","+31 6 28493751","p.vandenberg@email.nl","LinkedIn",date(2025,2,1),"Freelancer","Software Engineering","Java,Spring Boot,AWS"),
     c("CV-00102","Fatima","El Amrani","F",date(1995,7,22),"Rotterdam","3011 BK","Zuid-Holland","+31 6 51934827","f.elamrani@email.nl","Direct",date(2026,2,19),"New","Cloud Engineering","Azure,Terraform,Kubernetes"),
     c("CV-00103","Bas","Jansen","M",date(1982,11,5),"Utrecht","3512 JE","Utrecht","+31 6 43928174","b.jansen@email.nl","Referral",date(2025,6,1),"Employed","DevOps","Kubernetes,Docker,CI/CD,Ansible"),
@@ -552,8 +550,259 @@ CONTACTS = [
     ClientContact(external_id="CTK-005", client_corporation_external_id="CC-005", first_name="Peter", last_name="Visser", title="IT Director", email1="p.visser@philips.com", phone="+31 6 77889900", address_city="Amsterdam", status="Active"),
 ]
 
-def seed():
-    with Session() as session:
+def _generate_bulk(
+    start_num: int,
+    count: int,
+) -> Tuple:
+
+    rng = random.Random(42)
+
+    first_names_m = [
+        "Adam","Alex","Alexander","Alexei","André","Arjan","Arno","Bart","Ben","Boris",
+        "Bram","Chris","Daniel","David","Dennis","Dirk","Dylan","Emil","Erwin","Ethan",
+        "Ewout","Florian","Frits","George","Glen","Guido","Hans","Henrik","Hugo","Ivan",
+        "Jack","Jan","Jens","Jerome","Jesse","Jim","Job","Joel","Johan","Jonas",
+        "Jonathan","Joost","Jordan","Jos","Julien","Kevin","Lars","Luca","Luuk","Maarten",
+        "Marc","Martijn","Mathias","Max","Michael","Michiel","Milan","Mohamed","Nathan","Nico",
+        "Niels","Noah","Noel","Oliver","Oscar","Patrick","Paul","Peter","Philip","Piet",
+        "Pieter","Raoul","Remco","René","Rick","Robert","Robin","Roelof","Roland","Ruben",
+        "Rutger","Ryan","Sam","Sander","Sebastian","Simon","Stefan","Stef","Stephan","Steven",
+        "Thomas","Thijs","Tim","Tom","Victor","Vincent","Wim","Wouter","Xander","Yannick",
+    ]
+    first_names_f = [
+        "Aafke","Aimée","Alicia","Alina","Amber","Amy","Anita","Anna","Annelies","Annemieke",
+        "Anouk","Astrid","Bianca","Carla","Carmen","Charlotte","Chloé","Claudia","Dana","Deborah",
+        "Denise","Diana","Elena","Elise","Elke","Ellen","Emma","Esther","Eva","Eveline",
+        "Fatima","Femke","Fleur","Floor","Floortje","Gabrielle","Gina","Hannah","Hanna","Ilse",
+        "Inge","Iris","Isabelle","Jana","Jasmine","Jennifer","Jessica","Julie","Karen","Katja",
+        "Laura","Layla","Lena","Lies","Linde","Lisa","Loes","Lotte","Louisa","Luna",
+        "Lydia","Maaike","Manon","Maria","Mariam","Marieke","Marissa","Maud","Maya","Mia",
+        "Miriam","Monique","Nadia","Nathalie","Nicole","Nikki","Noor","Olivia","Patricia","Petra",
+        "Roos","Rosa","Sabine","Sara","Sarah","Silke","Simone","Sofie","Sophie","Stephanie",
+        "Suse","Suzanne","Tessa","Tineke","Vera","Victoria","Wendy","Yasmine","Yvonne","Zoë",
+    ]
+    last_names = [
+        "Aalbers","Aarts","Appel","Bakker","Barendregt","Beek","Berg","Berger","Blom","Boer",
+        "Bos","Bosch","Bosman","Brandt","Broek","Brouwer","Claes","Claessen","Coenen","Cools",
+        "Dam","Dekker","Dijkstra","Driessen","Dijk","Engel","Franken","Franssen","Geerts","Gerritsen",
+        "Groot","Haan","Hendriks","Henssen","Hermans","Hoek","Hoffman","Hout","Jacobs","Jansen",
+        "Jong","Jongen","Klaassen","Klein","Knol","Konings","Kooij","Kramer","Kuiper","Laan",
+        "Leeuw","Linden","Looijen","Maassen","Manders","Martens","Meijer","Molenaar","Mulder","Nijs",
+        "Nijssen","Oosterom","Peters","Pieters","Pijl","Pol","Prins","Roos","Sanders","Schipper",
+        "Scholten","Schouten","Smeets","Smit","Smits","Snijders","Steen","Stork","Timmermans","Ven",
+        "Verbeek","Verbeke","Vermeer","Vermeulen","Vis","Visser","Vliet","Vogel","Vos","Vries",
+        "Willems","Willemsen","Wit","Wolf","Wolters","Zijlstra","Zwart","van Beek","van Dijk","van Leeuwen",
+    ]
+
+    cities = [
+        ("Amsterdam","1011 AB","Noord-Holland"),
+        ("Rotterdam","3011 BK","Zuid-Holland"),
+        ("Utrecht","3512 JE","Utrecht"),
+        ("Eindhoven","5611 AZ","Noord-Brabant"),
+        ("Den Haag","2511 CR","Zuid-Holland"),
+        ("Haarlem","2011 VB","Noord-Holland"),
+        ("Groningen","9711 HK","Groningen"),
+        ("Leiden","2312 BK","Zuid-Holland"),
+        ("Tilburg","5032 ML","Noord-Brabant"),
+        ("Nijmegen","6512 BT","Gelderland"),
+        ("Breda","4811 ZG","Noord-Brabant"),
+        ("Arnhem","6826 AB","Gelderland"),
+        ("Maastricht","6211 EM","Limburg"),
+        ("Zwolle","8011 MR","Overijssel"),
+        ("Amersfoort","3812 JK","Utrecht"),
+        ("Enschede","7511 JB","Overijssel"),
+        ("Apeldoorn","7311 KZ","Gelderland"),
+        ("Deventer","7411 JE","Overijssel"),
+        ("Delft","2611 AC","Zuid-Holland"),
+        ("Dordrecht","3311 GR","Zuid-Holland"),
+        ("Alkmaar","1811 LC","Noord-Holland"),
+        ("Venlo","5911 AA","Limburg"),
+        ("Leeuwarden","8911 AA","Friesland"),
+        ("Zaandam","1501 BV","Noord-Holland"),
+        ("Hilversum","1211 AA","Noord-Holland"),
+    ]
+
+    categories = [
+        ("Software Engineering",     ["Java,Spring Boot,AWS","Python,Django,PostgreSQL","Node.js,TypeScript,React","C#,.NET,Azure,SQL Server","Kotlin,Spring,Microservices","Scala,Akka,Kafka","Ruby on Rails,PostgreSQL,Redis"]),
+        ("Cloud Engineering",        ["AWS,Terraform,Kubernetes","Azure,Bicep,AKS","GCP,BigQuery,Dataflow","Multi-Cloud,FinOps,Landing Zones","AWS,CDK,Lambda,API Gateway"]),
+        ("DevOps",                   ["Kubernetes,Helm,ArgoCD,GitOps","CI/CD,GitHub Actions,Terraform,Docker","Jenkins,Ansible,Linux,Bash","Azure DevOps,Pipelines,Python","GitLab CI,Docker,Prometheus,Grafana"]),
+        ("Site Reliability Engineering", ["SRE,Prometheus,Grafana,PagerDuty","Chaos Engineering,Reliability,Go","OpenTelemetry,Observability,AWS","SLO,SLI,Error Budgets,Python"]),
+        ("Data Engineering",         ["Python,Spark,dbt,Snowflake","SQL,Airflow,BigQuery,dbt","Kafka,Flink,Delta Lake,Python","Azure Data Factory,Synapse,PySpark"]),
+        ("Data Science",             ["Python,scikit-learn,XGBoost,Pandas","R,Statistics,A/B Testing,Tableau","Python,NLP,BERT,LangChain","Python,ML,Forecasting,Feature Engineering"]),
+        ("Machine Learning Engineering", ["Python,PyTorch,MLflow,Kubeflow","LLMs,RAG,LangChain,OpenAI API","Python,TensorFlow,Vertex AI,MLOps","Recommendation Systems,Kafka,Real-Time ML"]),
+        ("Frontend Development",     ["React,TypeScript,Next.js,GraphQL","Angular,RxJS,NgRx,Jest","Vue.js,Nuxt,Tailwind,Cypress","React Native,Expo,Firebase,TypeScript"]),
+        ("Backend Development",      ["Node.js,TypeScript,PostgreSQL,Redis","Python,FastAPI,Celery,MongoDB","Go,gRPC,Kubernetes,PostgreSQL","Rust,WebAssembly,gRPC,Microservices"]),
+        ("Cybersecurity",            ["SOC,SIEM,Splunk,Threat Hunting","Pentesting,Burp Suite,OWASP,CEH","Cloud Security,AWS Security,Zero Trust,IAM","GRC,ISO27001,DORA,Risk Management","AppSec,SAST,DAST,DevSecOps"]),
+        ("IT Management",            ["ITIL,Prince2,Agile,Scrum","CTO Advisory,IT Strategy,Governance","ITSM,SIAM,Vendor Management,ITIL","Product Ownership,OKRs,B2B SaaS,Roadmap"]),
+        ("Mobile Development",       ["iOS,Swift,SwiftUI,Combine","Android,Kotlin,Jetpack Compose","Flutter,Dart,Firebase,BLoC","React Native,TypeScript,Redux,Detox"]),
+        ("Test Engineering",         ["Selenium,Playwright,Python,BDD","Cypress,TypeScript,CI/CD,SDET","JMeter,k6,Performance Testing,API Testing","Robot Framework,Python,Azure DevOps"]),
+        ("SAP Consulting",           ["SAP S/4HANA,FI/CO,ABAP,Migration","SAP MM,PP,WM,S/4HANA,Fiori","SAP BW/4HANA,Analytics,SAC,Reporting"]),
+        ("Business Intelligence",    ["Power BI,DAX,SQL Server,Azure Synapse","Tableau,Looker,dbt,BigQuery","Qlik,SQL,SSRS,Analytics Engineering"]),
+        ("Database Administration",  ["Oracle DBA,PostgreSQL,Performance Tuning","SQL Server DBA,SSIS,Always On,Azure SQL","MongoDB,Redis,Cassandra,NoSQL Architecture"]),
+        ("Solutions Architecture",   ["AWS,GCP,Microservices,Event-Driven","Azure,SAP,Integration,TOGAF","Domain-Driven Design,API Design,Cloud-Native"]),
+        ("IT Architecture",          ["Enterprise Architecture,TOGAF,Archimate","Solution Architecture,Azure,DDD,API Design"]),
+        ("Business Analysis",        ["Business Analysis,BABOK,UML,BPMN","Requirements Engineering,Stakeholder Mgmt,SQL"]),
+        ("Network Engineering",      ["Cisco,CCNP,SD-WAN,BGP,OSPF","Juniper,Palo Alto,Network Security,Zero Trust"]),
+    ]
+
+    sources      = ["LinkedIn","Direct","Referral","Indeed","Website"]
+    statuses     = ["Freelancer","Employed","New","Freelancer","Employed"]  # weighted toward Freelancer/Employed
+    gdpr_bases   = ["Consent","Legitimate interest","Consent","Consent"]
+    gdpr_sources = ["Email","Portal","LinkedIn","Email"]
+
+    employers = [
+        "ING Bank","Rabobank","ABN AMRO","Accenture","Capgemini","Sogeti","Deloitte","KPMG","PwC",
+        "ASML","Philips","Shell","Unilever","Heineken","bol.com","Booking.com","Adyen","TomTom",
+        "Exact Software","AFAS","Cegeka","Ctac","Atos","Infosys","Cognizant","Wipro","IBM",
+        "Microsoft","Google","Amazon","Oracle","SAP","Salesforce","ServiceNow","Palo Alto Networks",
+        "Coolblue","Takeaway.com","Ahold Delhaize","NS","ProRail","Rijksoverheid","Gemeente Amsterdam",
+        "VodafoneZiggo","KPN","T-Mobile","Randstad","Hays","Yacht","USG People",
+    ]
+
+    degrees_bsc = [
+        "BSc Computer Science","BSc Software Engineering","BSc Information Technology",
+        "BSc Applied Mathematics","BSc Electrical Engineering","BSc Business Informatics",
+        "BSc ICT","BSc Data Science","BSc Informatica",
+    ]
+    degrees_msc = [
+        "MSc Computer Science","MSc Software Engineering","MSc Data Science",
+        "MSc Artificial Intelligence","MSc Information Security","MSc Cloud Computing",
+        "MSc Business Information Technology","MSc Embedded Systems","MSc Human-Computer Interaction",
+    ]
+    universities = [
+        ("TU Delft","Delft"),("University of Amsterdam","Amsterdam"),("VU Amsterdam","Amsterdam"),
+        ("Utrecht University","Utrecht"),("Eindhoven University of Technology","Eindhoven"),
+        ("University of Groningen","Groningen"),("Radboud University","Nijmegen"),
+        ("Tilburg University","Tilburg"),("Maastricht University","Maastricht"),
+        ("Hogeschool van Amsterdam","Amsterdam"),("Hogeschool Rotterdam","Rotterdam"),
+        ("Avans Hogeschool","Breda"),("Fontys Hogeschool","Eindhoven"),
+        ("HAN University","Nijmegen"),("Saxion University","Enschede"),
+        ("Haagse Hogeschool","Den Haag"),("NHL Stenden","Leeuwarden"),
+    ]
+
+    cands, edus, wxs, gdprs_out = [], [], [], []
+    edu_counter = 200
+    wx_counter  = 300
+
+    for i in range(count):
+        num     = start_num + i
+        cid     = f"CV-{num:05d}"
+        gender  = rng.choice(["M", "F"])
+        fn      = rng.choice(first_names_m if gender == "M" else first_names_f)
+        ln      = rng.choice(last_names)
+        birth_y = rng.randint(1975, 2000)
+        birth_m = rng.randint(1, 12)
+        birth_d = rng.randint(1, 28)
+        dob     = date(birth_y, birth_m, birth_d)
+
+        city, zipcode, state = rng.choice(cities)
+        phone_digits = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        phone = f"+31 6 {phone_digits[:4]} {phone_digits[4:]}"
+
+        slug  = fn.lower().replace(" ", "").replace("é","e").replace("è","e").replace("ë","e").replace("ö","o").replace("ü","u")
+        lslug = ln.lower().replace(" ", "").replace("é","e").replace("è","e").replace("ë","e").replace("ö","o").replace("ü","u")
+        email = f"{slug[0]}.{lslug}{num}@email.nl"
+
+        source     = rng.choice(sources)
+        status     = rng.choice(statuses)
+        cat_entry  = rng.choice(categories)
+        category   = cat_entry[0]
+        skills     = rng.choice(cat_entry[1])
+
+        avail_days = rng.randint(-180, 540)
+        avail_date = date(2025, 6, 1) + timedelta(days=avail_days)
+
+        cands.append(c(cid, fn, ln, gender, dob, city, zipcode, state,
+                       phone, email, source, avail_date, status, category, skills))
+
+        has_msc = rng.random() < 0.55
+        grad_year = max(birth_y + 18, 2000)
+
+        if has_msc:
+            bsc_start = date(grad_year, 9, 1)
+            bsc_end   = date(grad_year + 3, 6, 30)
+            msc_start = date(grad_year + 3, 9, 1)
+            msc_end   = date(grad_year + 5, 6, 30)
+            bsc_uni, bsc_city = rng.choice(universities)
+            msc_uni, msc_city = rng.choice(universities)
+            edu_counter += 1
+            edus.append(edu(f"EDU-{edu_counter:04d}", cid,
+                            rng.choice(degrees_bsc), bsc_uni, bsc_city, bsc_start, bsc_end))
+            edu_counter += 1
+            edus.append(edu(f"EDU-{edu_counter:04d}", cid,
+                            rng.choice(degrees_msc), msc_uni, msc_city, msc_start, msc_end))
+        else:
+            bsc_start = date(grad_year, 9, 1)
+            bsc_end   = date(grad_year + 4, 6, 30)
+            bsc_uni, bsc_city = rng.choice(universities)
+            edu_counter += 1
+            edus.append(edu(f"EDU-{edu_counter:04d}", cid,
+                            rng.choice(degrees_bsc), bsc_uni, bsc_city, bsc_start, bsc_end))
+
+        num_roles   = rng.randint(2, 3)
+        titles = {
+            "Software Engineering":     ["Software Engineer","Senior Software Engineer","Lead Developer","Principal Engineer"],
+            "Cloud Engineering":        ["Cloud Engineer","Senior Cloud Engineer","Cloud Architect","Platform Engineer"],
+            "DevOps":                   ["DevOps Engineer","Senior DevOps Engineer","Platform Engineer","DevOps Lead"],
+            "Site Reliability Engineering": ["SRE","Senior SRE","Site Reliability Engineer","Lead SRE"],
+            "Data Engineering":         ["Data Engineer","Senior Data Engineer","Lead Data Engineer","Analytics Engineer"],
+            "Data Science":             ["Data Scientist","Senior Data Scientist","Principal Data Scientist","Junior Data Scientist"],
+            "Machine Learning Engineering": ["ML Engineer","Senior ML Engineer","ML Scientist","MLOps Engineer"],
+            "Frontend Development":     ["Frontend Developer","Senior Frontend Developer","UI Engineer","Frontend Lead"],
+            "Backend Development":      ["Backend Developer","Senior Backend Developer","Backend Lead","API Developer"],
+            "Cybersecurity":            ["Security Analyst","Senior Security Consultant","Penetration Tester","Security Engineer"],
+            "IT Management":            ["IT Manager","Programme Manager","Scrum Master","Product Owner"],
+            "Mobile Development":       ["Mobile Developer","iOS Developer","Android Developer","Senior Mobile Engineer"],
+            "Test Engineering":         ["Test Engineer","QA Engineer","SDET","Senior Test Automation Engineer"],
+            "SAP Consulting":           ["SAP Consultant","Senior SAP Consultant","SAP Solution Architect","SAP Functional Analyst"],
+            "Business Intelligence":    ["BI Developer","Senior BI Developer","Analytics Engineer","BI Architect"],
+            "Database Administration":  ["DBA","Senior DBA","Database Engineer","Database Architect"],
+            "Solutions Architecture":   ["Solutions Architect","Senior Solutions Architect","Enterprise Architect","Cloud Architect"],
+            "IT Architecture":          ["IT Architect","Enterprise Architect","Solution Architect"],
+            "Business Analysis":        ["Business Analyst","Senior Business Analyst","Functional Analyst","Lead BA"],
+            "Network Engineering":      ["Network Engineer","Senior Network Engineer","Network Architect"],
+        }
+        role_titles = titles.get(category, ["IT Consultant","Senior IT Consultant"])
+
+        current_end = None
+        for r in range(num_roles):
+            title     = rng.choice(role_titles)
+            employer  = rng.choice(employers)
+            role_yrs  = rng.randint(2, 5)
+            if r == 0 and status in ("Freelancer", "New"):
+                end_date  = None
+                start_date = date(2025, 1, 1) - timedelta(days=rng.randint(180, 1095))
+            else:
+                if current_end is None:
+                    current_end = date(2024, rng.randint(1, 12), 1)
+                end_date   = current_end
+                start_date = date(current_end.year - role_yrs, current_end.month, 1)
+                current_end = date(start_date.year - 1, start_date.month, 1)
+
+            wx_counter += 1
+            wxs.append(wx(f"WX-{wx_counter:04d}", cid, title, employer, start_date, end_date))
+
+        sent_date = date(2024, rng.randint(1, 12), rng.randint(1, 28))
+        recv_date = date(sent_date.year, sent_date.month, min(sent_date.day + 2, 28))
+        gdprs_out.append(gdpr(cid, "Recruitment processing",
+                               rng.choice(gdpr_bases), sent_date, recv_date,
+                               rng.choice(gdpr_sources)))
+
+    return cands, edus, wxs, gdprs_out
+
+
+_bulk = _generate_bulk(
+    start_num=201,
+    count=900,
+)
+CANDIDATES     += _bulk[0]
+EDUCATION      += _bulk[1]
+WORK_EXPERIENCE += _bulk[2]
+GDPR           += _bulk[3]
+
+
+def seed() -> None:
+    with SessionLocal() as session:
         print("Clearing existing data...")
         session.query(CandidateGDPR).delete()
         session.query(CandidateWorkExperience).delete()

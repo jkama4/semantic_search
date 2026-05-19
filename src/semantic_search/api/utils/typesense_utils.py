@@ -78,8 +78,18 @@ def setup_typesense_collections(
 def generate_collection(
     client: Client = constants.TS_CLIENT,
 ) -> None:
-    """Create the Typesense collection if it doesn't exist."""
+    """Create the Typesense collection, or patch new fields into an existing one."""
     try:
         create_collection(schema=constants.CONSULTANT_SCHEMA, client=client)
     except typesense.exceptions.ObjectAlreadyExists:
-        pass
+        # Collection exists — attempt to add any new facet fields.
+        existing = client.collections[constants.CONSULTANT_SCHEMA["name"]].retrieve()
+        existing_names = {f["name"] for f in existing.get("fields", [])}
+        new_fields = [
+            f for f in constants.SCHEMA_PATCH_FIELDS
+            if f["name"] not in existing_names
+        ]
+        if new_fields:
+            client.collections[constants.CONSULTANT_SCHEMA["name"]].update(
+                {"fields": new_fields}
+            )
