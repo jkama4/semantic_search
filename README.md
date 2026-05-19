@@ -1,8 +1,8 @@
-# TalentLens (Proof-of-Concept)
-TalentLens is an AI tool that provides users the ability to search through data with natural language. 
-TalentLens is a proof-of-concept designed for Pro-Act IT, a consultancy company with a huge database of 
+# RAG Candidate Search (Proof-of-Concept)
+An AI tool that provides users the ability to search through (synthetic) data with natural language. 
+This project is a proof-of-concept designed for Pro-Act IT, a consultancy company with a huge database of 
 consultants. However, querying over the database is very time-consuming and inefficient in many 
-cases. Therefore, I developed TalentLens, which provides workers the ability to quickly retrieve 
+cases. Therefore, I developed this project, which provides workers the ability to quickly retrieve 
 relevant data.
 
 ## Requirements
