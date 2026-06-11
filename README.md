@@ -37,6 +37,9 @@ The dashboard is now available at [http://localhost:8501](http://localhost:8501)
 
 The next time you're starting up the application, simply run `docker compose up`
 
+**NOTE:** A message related to an unhealthy gateway might show up. In case of this 
+happening, simply use `docker compose up` (again) to get the service up and running.
+
 ## Resetting Everything
 
 To wipe all data and start fresh:
