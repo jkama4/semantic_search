@@ -20,7 +20,7 @@ Make sure Docker is running, then start all services:
 docker compose up
 ```
 
-The first boot could take a minutes. Docker will build the images and Ollama will download the 
+The first boot could take a few minutes. Docker will build the images and Ollama will download the 
 `llama3.2` model (~2 GB). Wait until all containers show as healthy before continuing.
 
 Once everything is up, seed the database with sample data:
