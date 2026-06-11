@@ -646,7 +646,7 @@ def _generate_bulk(
     ]
 
     sources      = ["LinkedIn","Direct","Referral","Indeed","Website"]
-    statuses     = ["Freelancer","Employed","New","Freelancer","Employed"]  # weighted toward Freelancer/Employed
+    statuses     = ["Freelancer","Employed","New","Freelancer","Employed"]
     gdpr_bases   = ["Consent","Legitimate interest","Consent","Consent"]
     gdpr_sources = ["Email","Portal","LinkedIn","Email"]
 

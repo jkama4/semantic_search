@@ -82,7 +82,6 @@ def generate_collection(
     try:
         create_collection(schema=constants.CONSULTANT_SCHEMA, client=client)
     except typesense.exceptions.ObjectAlreadyExists:
-        # Collection exists — attempt to add any new facet fields.
         existing = client.collections[constants.CONSULTANT_SCHEMA["name"]].retrieve()
         existing_names = {f["name"] for f in existing.get("fields", [])}
         new_fields = [
