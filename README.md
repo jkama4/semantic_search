@@ -17,7 +17,7 @@ If you want to develop or run tests locally outside of Docker, you will also nee
 Make sure Docker is running, then start all services:
 
 ```
-docker compose up
+docker compose up --build
 ```
 
 The first boot could take a few minutes. Docker will build the images and Ollama will download the 
@@ -31,6 +31,8 @@ curl -X POST http://localhost:8000/seed
 
 The dashboard is now available at [http://localhost:8501](http://localhost:8501).
 
+The next you're starting up the application, simply run `docker compose up`
+
 ## Resetting Everything
 
 To wipe all data and start fresh:
@@ -39,7 +41,7 @@ To wipe all data and start fresh:
 docker compose down -v
 ```
 
-Then run `docker compose up` and re-seed as described above.
+Then run `docker compose up --build` and re-seed as described above.
 
 ## Local Development
 
