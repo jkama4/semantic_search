@@ -14,6 +14,10 @@ If you want to develop or run tests locally outside of Docker, you will also nee
 
 ## Running the Application
 
+The default values in [.env.example](https://github.com/jkama4/semantic_search/blob/main/.env.example) 
+work out of the box for local development and Docker. No changes are needed unless 
+you want to customise the setup.
+
 Make sure Docker is running, then start all services:
 
 ```
@@ -31,7 +35,7 @@ curl -X POST http://localhost:8000/seed
 
 The dashboard is now available at [http://localhost:8501](http://localhost:8501).
 
-The next you're starting up the application, simply run `docker compose up`
+The next time you're starting up the application, simply run `docker compose up`
 
 ## Resetting Everything
 
