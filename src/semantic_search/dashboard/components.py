@@ -1,11 +1,10 @@
-from typing import Tuple, List
-
-import streamlit as st
 import requests
 
-from typing import Tuple
+import streamlit as st
 
-from semantic_search.dashboard.utils import parse_profile_sections, relevance_badge
+from semantic_search.dashboard.utils import parse_profile_sections
+
+from typing import Tuple, List
 
 
 def sidebar(
@@ -19,7 +18,6 @@ def sidebar(
         st.divider()
         _filters()
         st.divider()
-        _reindex_action(search_endpoint)
 
     return inject_info, rerank
 
@@ -64,20 +62,6 @@ def _filters() -> None:
     )
 
 
-def _reindex_action(
-    search_endpoint: str
-) -> None:
-
-    if st.button(label="Re-index candidates", use_container_width=True):
-        with st.spinner("Indexing candidates from database..."):
-            index_url = search_endpoint.replace("/search", "/index")
-            r: requests.Response = requests.post(url=index_url)
-            if r.status_code == 200:
-                st.success(f"Indexed {r.json()['indexed']} candidates.")
-            else:
-                st.error(f"Indexing failed: {r.status_code}")
-
-
 def candidate_list(
     hits: List
 ) -> None:
@@ -93,24 +77,17 @@ def _candidate_card(
 ) -> None:
 
     with st.container(border=True):
-        name     = hit.get("name") or "Unknown"
-        status   = hit.get("status") or "—"
-        city     = hit.get("city") or "—"
+        name = hit.get("name") or "Unknown"
+        status = hit.get("status") or "—"
+        city = hit.get("city") or "—"
         category = hit.get("category") or "—"
         distance = hit.get("vector_distance", 0.0)
-        text     = hit.get("search_text", "")
+        text = hit.get("search_text", "")
 
-        col_meta, col_score = st.columns([4, 1])
+        col_meta, _ = st.columns([4, 1])
         with col_meta:
             st.markdown(f"**{name}**")
             st.caption(f"{category} · {city} · {status}")
-        with col_score:
-            badge = relevance_badge(distance)
-            st.markdown(
-                body=f"<div style='text-align:right; font-size:0.75rem; " # Determined by Claude, of course
-                f"padding-top:4px'>{badge} {distance:.2f}</div>",
-                unsafe_allow_html=True,
-            )
 
         _candidate_profile(text)
 

@@ -2,12 +2,12 @@ import os
 
 import ollama as oll
 
+from . import models
+from .. import config
+
 from typing import Dict, List
 
-from . import config, models
-
 LLM_CLIENT: oll.Client = oll.Client(host=os.getenv("OLLAMA_CONN_ENDPOINT"))
-
 
 def call(
     messages: List[Dict],

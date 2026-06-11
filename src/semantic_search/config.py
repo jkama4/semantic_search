@@ -13,7 +13,12 @@ COLLECTION_NAME: str = os.getenv("COLLECTION_NAME")
 
 SEARCH_ENDPOINT: str = os.getenv("SEARCH_ENDPOINT")
 LLM_ENDPOINT: str = os.getenv("LLM_ENDPOINT")
+LLM_MODEL: str = os.getenv("LLM_MODEL")
 
-LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.2")
+OLLAMA_CONN_ENDPOINT: str = os.getenv("OLLAMA_CONN_ENDPOINT")
 
-CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY")
+POSTGRES_USER: str = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT: str = os.getenv("POSTGRES_PORT")
+POSTGRES_DB: str = os.getenv("POSTGRES_DB")

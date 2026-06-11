@@ -1,4 +1,4 @@
-from . import config
+from .. import config
 
 from typesense import Client
 

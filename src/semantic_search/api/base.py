@@ -1,52 +1,12 @@
-import time
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
-import typesense.exceptions
 
 from . import constants, llm, models
-from .utils import typesense_utils as ts_utils
-from ..db.session import setup_database
+
+from .utils.main_utils import lifespan
 from ..db.pipeline import index_all_candidates
 from ..data.seed import seed
 
 from typing import Dict, List, Optional
-
-
-def _wait_for_typesense(
-    retries: int = 15,
-    delay: float = 3.0
-) -> None:
-
-    for attempt in range(1, retries + 1):
-        try:
-            if constants.TS_CLIENT.operations.is_healthy():
-                return
-        except Exception:
-            pass
-        if attempt == retries:
-            raise RuntimeError(
-                f"Typesense did not become ready after {retries} attempts."
-            )
-        time.sleep(delay)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    setup_database()
-    _wait_for_typesense()
-
-    for attempt in range(1, 21):
-        try:
-            ts_utils.generate_collection()
-            break
-        except (typesense.exceptions.ServiceUnavailable, Exception):
-            if attempt == 20:
-                raise
-            time.sleep(10)
-
-    yield
-
 
 app = FastAPI(lifespan=lifespan)
 

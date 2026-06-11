@@ -1,9 +1,7 @@
-import os
-
 import streamlit as st
 
-from semantic_search.api import config
-from semantic_search.dashboard.components import candidate_list, chat_history, chat_input, sidebar
+from semantic_search import config
+from semantic_search.dashboard.components import chat_history, chat_input, sidebar
 
 st.title("Candidate Discovery")
 

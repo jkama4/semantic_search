@@ -1,15 +1,5 @@
 from typing import List, Dict
 
-def relevance_badge(
-    distance: float
-) -> str:
-
-    if distance <= 0.30:
-        return "Strong Match"
-    if distance <= 0.50:
-        return "Probable Match"
-    return "Bad Match"
-
 
 def parse_profile_sections(
     text: str

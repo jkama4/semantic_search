@@ -2,13 +2,12 @@ from datetime import date
 
 from sqlalchemy.orm import joinedload
 
-from typing import Dict, List
-
 from ..api import constants
 from ..api.utils.typesense_utils import upsert_documents
 from .models import Candidate
 from .session import SessionLocal
 
+from typing import Dict, List
 
 def _format_date_range(
     start_date: date,

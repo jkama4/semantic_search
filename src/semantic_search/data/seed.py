@@ -1,16 +1,13 @@
-import os
 import random
+
 from datetime import date, timedelta
 from typing import Tuple
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from ..db.models import (
     Candidate, CandidateEducation, CandidateGDPR, CandidateWorkExperience,
     ClientContact, ClientCorporation,
 )
-from ..db.session import DATABASE_URL, engine, SessionLocal
+from ..db.session import SessionLocal
 
 
 def c(eid, fn, ln, gen, dob, city, zipcode, state, mobile, email, source, avail, status, category, skills):
